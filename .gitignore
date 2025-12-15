@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Environnements virtuels
+venv/
+env/
+*.env
+
+# Fichiers de logs et outputs
+*.log
+*.csv
+*.h5
+*.pt
+*.pth
+outputs/
+weights/
+
+# Jupyter / notebooks
+.ipynb_checkpoints/
+
+# Mac / Windows
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
