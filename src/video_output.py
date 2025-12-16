@@ -1,6 +1,8 @@
 import cv2
 from ultralytics import YOLO
 import torch
+from picamera2 import Picamera2
+import time
 
 def inference(model, frame):
 
@@ -22,18 +24,17 @@ def draw_boxes(frame, boxes):
 
 def read_stream(model=None):
 
-    stream = cv2.VideoCapture(0)
+    picam2 = Picamera2()
 
-    stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
-    stream.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    # Configuration "still" ou "preview"
+    preview_config = picam2.create_preview_configuration()
+    picam2.configure(preview_config)
+
+    picam2.start()
+    time.sleep(2)
     
     while True:
-        ret, frame = stream.read()
-        fps = stream.get(cv2.CAP_PROP_FPS)
-        
-        if not ret:
-            print('invalid stream')
-            break
+        frame = cv2.resize(picam2.capture_array(), 640, 640)
         
         if model != None:
             boxes = inference(model, frame)
@@ -43,16 +44,14 @@ def read_stream(model=None):
         
         if cv2.waitKey(1) == ord('q'):
             break  
-    stream.release()
+    
+    picam2.stop()
     cv2.destroyAllWindows()
-    print(f'{fps} FPS')
     
 model = YOLO('C:\\Users\\Lucas\\Desktop\\yolov8-realtime-detection\\weights\\finetuned_weights.pt')
-model.to("cuda")
-# model.half()
 
-# img_test = cv2.imread("C:\\Users\\Lucas\\Desktop\\yolov8-realtime-detection\\carte.jpg")
-# results = model(img_test)
-# draw_boxes(img_test, results[0].boxes)
+img_test = cv2.imread("/home/lucas/Desktop/yolov8-raspberry-pi/test_image.jpg")
+results = model(img_test)
+draw_boxes(img_test, results[0].boxes)
 
-read_stream(model=model)
+# read_stream(model=model)
