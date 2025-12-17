@@ -38,9 +38,7 @@ def read_stream(model=None):
     time.sleep(2)
     
     while True:
-        #frame = cv2.resize(picam2.capture_array(), 640, 640)
         frame = picam2.capture_array()
-        print(frame.shape)
         
         if model != None:
             boxes = inference(model, frame)
