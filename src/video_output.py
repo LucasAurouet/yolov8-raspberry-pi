@@ -1,6 +1,8 @@
 import cv2
 from ultralytics import YOLO
 import torch
+from picamera2 import Picamera2
+import time
 
 def inference(model, frame):
 
@@ -9,31 +11,34 @@ def inference(model, frame):
     return results[0].boxes
 
 def draw_boxes(frame, boxes):
-        for box, conf, label in zip(boxes.xyxy, boxes.conf, boxes.cls):
-            x1, y1, x2, y2 = map(int, box)
-            # Draw the box
-            color = (0,255,0)
-            cv2.rectangle(frame, (x1,y1), (x2,y2), color, 2)
-            cv2.putText(frame, f"{label}:{conf:.2f}", (x1, y1-5),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+    for box, conf, label in zip(boxes.xyxy, boxes.conf, boxes.cls):
+        x1, y1, x2, y2 = map(int, box)
+        # Draw the box
+        color = (0,255,0)
+        cv2.rectangle(frame, (x1,y1), (x2,y2), color, 2)
+        cv2.putText(frame, f"{label}:{conf:.2f}", (x1, y1-5),
+                   cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
 
-        # Show the image 
-        cv2.imshow('video', frame)
+    # Show the image 
+    cv2.imshow('video', frame)
 
 def read_stream(model=None):
 
-    stream = cv2.VideoCapture(0)
+    picam2 = Picamera2()
 
-    stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
-    stream.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    # Configuration "still" ou "preview"
+    preview_config = picam2.create_video_configuration(
+        main={"size": (480, 480),
+              "format": "RGB888"
+              }
+        )
+    picam2.configure(preview_config)
+
+    picam2.start()
+    time.sleep(2)
     
     while True:
-        ret, frame = stream.read()
-        fps = stream.get(cv2.CAP_PROP_FPS)
-        
-        if not ret:
-            print('invalid stream')
-            break
+        frame = picam2.capture_array()
         
         if model != None:
             boxes = inference(model, frame)
@@ -43,16 +48,14 @@ def read_stream(model=None):
         
         if cv2.waitKey(1) == ord('q'):
             break  
-    stream.release()
-    cv2.destroyAllWindows()
-    print(f'{fps} FPS')
     
-model = YOLO('C:\\Users\\Lucas\\Desktop\\yolov8-realtime-detection\\weights\\finetuned_weights.pt')
-model.to("cuda")
-# model.half()
+    picam2.stop()
+    cv2.destroyAllWindows()
+    
+model = YOLO('/home/lucas/Desktop/yolov8-raspberry-pi/weights/finetuned_weights.pt')
 
-# img_test = cv2.imread("C:\\Users\\Lucas\\Desktop\\yolov8-realtime-detection\\carte.jpg")
-# results = model(img_test)
-# draw_boxes(img_test, results[0].boxes)
+#img_test = cv2.imread(r"/home/lucas/Desktop/yolov8-raspberry-pi/test_image.jpg")
+#results = model(img_test)
+#draw_boxes(img_test, results[0].boxes)
 
 read_stream(model=model)
