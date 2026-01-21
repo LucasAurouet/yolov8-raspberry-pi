@@ -26,7 +26,8 @@ def compile_model(onnx_path: Path):
         "dataflow_compiler",
         "--input-model", str(onnx_path),
         "--output-dir", str(ir_dir),
-        "--target", "hailo8"
+        "--target", "hailo8",
+        "--precision", "int8"
     ]
     if calibration_data.exists():
         cmd_ir += ["--calibration-data", str(calibration_data)]
