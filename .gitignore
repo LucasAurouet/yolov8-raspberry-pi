@@ -4,11 +4,11 @@ __pycache__/
 *.pyo
 *.pyd
 *.pyc
+.python-version
 
 # Environnements virtuels
-venv/
-env/
-*.env
+hailo_venv/
+yolo_venv/
 
 # Fichiers de logs et outputs
 *.log
