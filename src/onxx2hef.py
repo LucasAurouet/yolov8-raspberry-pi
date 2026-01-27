@@ -1,1 +1,0 @@
-from hailo_sdk_client import ClientRunner

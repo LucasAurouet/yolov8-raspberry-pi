@@ -6,6 +6,9 @@ __pycache__/
 *.pyc
 .python-version
 
+# Pygraphviz
+pygraphviz/
+
 # Environnements virtuels
 hailo_venv/
 yolo_venv/
