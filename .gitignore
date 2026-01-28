@@ -9,6 +9,9 @@ __pycache__/
 # Pygraphviz
 pygraphviz/
 
+# Données Calibration
+calib_data/
+
 # Environnements virtuels
 hailo_venv/
 yolo_venv/
