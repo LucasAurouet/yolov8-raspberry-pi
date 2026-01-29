@@ -3,46 +3,6 @@ from multiprocessing import Process
 from hailo_platform import (HEF, VDevice, HailoStreamInterface, InferVStreams, ConfigureParams,
     InputVStreamParams, OutputVStreamParams, InputVStreams, OutputVStreams, FormatType)
 
-# The target can be used as a context manager ("with" statement) to ensure it's released on time.
-# Here it's avoided for the sake of simplicity
-target = VDevice()
-
-# Loading compiled HEFs to device:
-model_name = 'resnet_v1_18'
-hef_path = '../hefs/{}.hef'.format(model_name)
-hef = HEF(hef_path)
-
-# Configure network groups
-configure_params = ConfigureParams.create_from_hef(hef=hef, interface=HailoStreamInterface.PCIe)
-network_groups = target.configure(hef, configure_params)
-network_group = network_groups[0]
-network_group_params = network_group.create_params()
-
-# Create input and output virtual streams params
-input_vstreams_params = InputVStreamParams.make(network_group, format_type=FormatType.FLOAT32)
-output_vstreams_params = OutputVStreamParams.make(network_group, format_type=FormatType.UINT8)
-
-# Define dataset params
-input_vstream_info = hef.get_input_vstream_infos()[0]
-output_vstream_info = hef.get_output_vstream_infos()[0]
-image_height, image_width, channels = input_vstream_info.shape
-num_of_images = 10
-low, high = 2, 20
-
-# Generate random dataset
-dataset = np.random.randint(low, high, (num_of_images, image_height, image_width, channels)).astype(np.float32)
-
- ]:
-
-# Infer
-with InferVStreams(network_group, input_vstreams_params, output_vstreams_params) as infer_pipeline:
-    input_data = {input_vstream_info.name: dataset}
-    with network_group.activate(network_group_params):
-        infer_results = infer_pipeline.infer(input_data)
-        print('Stream output shape is {}'.format(infer_results[output_vstream_info.name].shape))
-
-
-
 def send(configured_network, num_frames):
     configured_network.wait_for_activation(1000)
     vstreams_params = InputVStreamParams.make(configured_network)
@@ -75,6 +35,29 @@ def recv_all(configured_network, num_frames):
     if recv_failed:
         raise Exception("recv failed")
 
+# The target can be used as a context manager ("with" statement) to ensure it's released on time.
+# Here it's avoided for the sake of simplicity
+target = VDevice()
+
+# Loading compiled HEFs to device:
+hef_path = "/home/lucas/Desktop/yolov8-raspberry-pi/weights/finetuned.hef"
+hef = HEF(hef_path)
+
+# Configure network groups
+configure_params = ConfigureParams.create_from_hef(hef=hef, interface=HailoStreamInterface.PCIe)
+network_groups = target.configure(hef, configure_params)
+network_group = network_groups[0]
+network_group_params = network_group.create_params()
+
+# Create input and output virtual streams params
+input_vstreams_params = InputVStreamParams.make(network_group, format_type=FormatType.FLOAT32)
+output_vstreams_params = OutputVStreamParams.make(network_group, format_type=FormatType.UINT8)
+
+# Define dataset params
+input_vstream_info = hef.get_input_vstream_infos()[0]
+output_vstream_info = hef.get_output_vstream_infos()[0]
+image_height, image_width, channels = input_vstream_info.shape
+
 # Define the amount of frames to stream
 num_of_frames = 1000
 
@@ -82,7 +65,7 @@ send_process = Process(target=send, args=(network_group, num_of_frames))
 recv_process = Process(target=recv_all, args=(network_group, num_of_frames))
 recv_process.start()
 send_process.start()
-print('Starting streaming (hef=\'{}\', num_of_frames={})'.format(model_name, num_of_frames))
+
 with network_group.activate(network_group_params):
     send_process.join()
     recv_process.join()
